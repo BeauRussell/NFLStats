@@ -6,8 +6,15 @@
   "scripts": {
     "build": "tsc"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@types/node": "^22.10.1",
+    "cli-progress": "^3.12.0",
+    "csv-parser": "^3.0.0",
+    "fs": "^0.0.1-security",
+    "sqlite3": "^5.1.7"
+  },
   "devDependencies": {
+    "@types/cli-progress": "^3.11.6",
     "typescript": "^5.5.3"
   },
   "private": true
