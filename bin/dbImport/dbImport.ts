@@ -17,66 +17,59 @@ function writeCSVToDB(csvPath: string, tableName: string): Promise<void> {
         fs.createReadStream(csvPath)
             .pipe(csv())
             .on('data', (row: any): void => {
-                console.log(row);
-                if (csvData.length == 6362) {
-                    console.log(row);
-                }
                 csvData.push(row);
             })
-            // .on('end', (): void => {
-            //     const columns: string[] = Object.keys(csvData[0]);
-            //     const createQuery: string = `CREATE TABLE IF NOT EXISTS ${tableName} (${columns.join(' TEXT, ')} TEXT)`;
-            //     db.run(createQuery, (err: Error): void => {
-            //         if (err) {
-            //             return reject(err);
-            //         }
-            //
-            //         bar.start(100,0);
-            //
-            //         // Clean out empty headers, save indexes to remove later
-            //         const headers: string[] = [];
-            //         const emptyIndexes: number[] = [];
-            //         columns.forEach((header: string, index: number) => {
-            //             if (header != '') {
-            //                 headers.push(header);
-            //             } else {
-            //                 emptyIndexes.push(index);
-            //             }
-            //         });
-            //
-            //         // Insert CSV data into the table
-            //         const insertQuery: string = `INSERT INTO ${tableName} (${headers.join(', ')}) VALUES (${headers.map((): string => '?').join(', ')})`;
-            //
-            //         const stmt: Statement = db.prepare(insertQuery);
-            //         csvData.forEach((row: object, rowNum: number): void => {
-            //             // Clean row of bad data
-            //             const rowValues: string[] = Object.values(row);
-            //             emptyIndexes.forEach((index: number): void => {
-            //                 rowValues.splice(index, 1);
-            //             });
-            //             if (rowNum == 6362) {
-            //                 console.log(rowValues);
-            //             }
-            //             bar.update(Math.floor(rowNum / csvData.length * 100));
-            //
-            //             stmt.run(rowValues, (err: Error): void => {
-            //                 if (err) {
-            //                     console.log('Failed to insert row value ' + rowNum, err);
-            //                     reject(err);
-            //                 }
-            //             });
-            //         });
-            //         stmt.finalize((err: Error): void => {
-            //             if (err) {
-            //                 reject(err);
-            //             }
-            //             bar.stop();
-            //             resolve();
-            //         });
-            //
-            //         db.close();
-            //     });
-            // })
+            .on('end', (): void => {
+                const columns: string[] = Object.keys(csvData[0]);
+                const createQuery: string = `CREATE TABLE IF NOT EXISTS ${tableName} (${columns.join(' TEXT, ')} TEXT)`;
+                db.run(createQuery, (err: Error): void => {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    bar.start(100,0);
+
+                    // Clean out empty headers, save indexes to remove later
+                    const headers: string[] = [];
+                    const emptyIndexes: number[] = [];
+                    columns.forEach((header: string, index: number) => {
+                        if (header != '') {
+                            headers.push(header);
+                        } else {
+                            emptyIndexes.push(index);
+                        }
+                    });
+
+                    // Insert CSV data into the table
+                    const insertQuery: string = `INSERT INTO ${tableName} (${headers.join(', ')}) VALUES (${headers.map((): string => '?').join(', ')})`;
+
+                    const stmt: Statement = db.prepare(insertQuery);
+                    csvData.forEach((row: any, rowNum: number): void => {
+                        // Clean row of bad data
+                        const rowValues: string[] = Object.values(row);
+                        emptyIndexes.forEach((index: number): void => {
+                            rowValues.splice(index, 1);
+                        });
+                        bar.update(Math.floor(rowNum / csvData.length * 100));
+
+                        stmt.run(rowValues, (err: Error): void => {
+                            if (err) {
+                                console.log('Failed to insert row value ' + rowNum, err);
+                                reject(err);
+                            }
+                        });
+                    });
+                    stmt.finalize((err: Error): void => {
+                        if (err) {
+                            reject(err);
+                        }
+                        bar.stop();
+                        resolve();
+                    });
+
+                    db.close();
+                });
+            })
             .on('error', (err: Error): void => {
                 reject(err)
             });
